@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monster World</title>
+
+<style>
+* {
+  box-sizing: border-box;
+  user-select: none;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
+  background: #10131a;
+  color: white;
+}
+
+#game {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at center, #29313d, #10131a 75%);
+}
+
+#title {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 28px;
+  font-weight: bold;
+  z-index: 10;
+}
+
+#stats {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  z-index: 20;
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+.bar {
+  width: 180px;
+  height: 12px;
+  background: #333;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-top: 3px;
+}
+
+.bar div {
+  height: 100%;
+  width: 100%;
+  transition: width 0.2s;
+}
+
+#hpBar {
+  background: #e53935;
+}
+
+#xpBar {
+  background: #42a5f5;
+}
+
+#skill {
+  position: absolute;
+  right: 15px;
+  top: 15px;
+  z-index: 20;
+  padding: 10px 15px;
+  border: 0;
+  border-radius: 10px;
+  background: #7e57c2;
+  color: white;
+  font-weight: bold;
+  font-size: 15px;
+}
+
+#skill:disabled {
+  opacity: 0.4;
+}
+
+.monster {
+  position: absolute;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #7e57c2;
+  border: 3px solid white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 35px;
+  cursor: pointer;
+  box-shadow: 0 0 18px #7e57c2;
+  transition: transform 0.1s;
+}
+
+.monster:active {
+  transform: scale(0.8);
+}
+
+.boss {
+  width: 145px;
+  height: 145px;
+  background: #b71c1c;
+  font-size: 75px;
+  box-shadow: 0 0 35px #ff5252;
+  border: 5px solid #ffcc00;
+}
+
+.bossHP {
+  position: absolute;
+  width: 150px;
+  height: 12px;
+  background: #222;
+  border: 1px solid white;
+  border-radius: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: -22px;
+  overflow: hidden;
+}
+
+.bossHP div {
+  height: 100%;
+  width: 100%;
+  background: #ff1744;
+}
+
+.item {
+  position: absolute;
+  width: 55px;
+  height: 55px;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  cursor: pointer;
+  border: 2px solid white;
+  animation: float 0.8s infinite alternate;
+}
+
+@keyframes float {
+  from { transform: translateY(0); }
+  to { transform: translateY(-8px); }
+}
+
+#message {
+  position: absolute;
+  left: 50%;
+  bottom: 25px;
+  transform: translateX(-50%);
+  font-size: 20px;
+  font-weight: bold;
+  z-index: 30;
+  text-shadow: 0 2px 5px black;
+}
+
+#gameOver {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.88);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  text-align: center;
+}
+
+#gameOver h1 {
+  font-size: 50px;
+}
+
+#restart {
+  padding: 14px 30px;
+  border: 0;
+  border-radius: 10px;
+  font-size: 18px;
+  font-weight: bold;
+}
+</style>
+</head>
+
+<body>
+
+<div id="game">
+
+  <div id="title">MONSTER WORLD</div>
+
+  <div id="stats">
+    ❤️ HP: <span id="hpText">10</span> / 10
+    <div class="bar"><div id="hpBar"></div></div>
+
+    ⭐ 레벨: <span id="levelText">1</span>
+
+    <br>
+
+    경험치: <span id="xpText">0</span> / <span id="needText">100</span>
+    <div class="bar"><div id="xpBar"></div></div>
+
+    🏆 점수: <span id="scoreText">0</span><br>
+    🌊 웨이브: <span id="waveText">1</span>
+  </div>
+
+  <button id="skill" onclick="useSkill()" disabled>
+    ⚡ 스킬 (<span id="skillCount">0</span>)
+  </button>
+
+  <div id="message"></div>
+
+  <div id="gameOver">
+    <h1>GAME OVER</h1>
+    <p>최종 점수: <span id="finalScore">0</span></p>
+    <p>최종 레벨: <span id="finalLevel">1</span></p>
+    <button id="restart" onclick="restartGame()">다시 시작</button>
+  </div>
+
+</div>
+
+<script>
+const game = document.getElementById("game");
+
+let hp = 10;
+let score = 0;
+let level = 1;
+let xp = 0;
+let needXP = 100;
+let wave = 1;
+let skillCount = 0;
+let shield = false;
+let bossActive = false;
+let gameEnded = false;
+
+const hpText = document.getElementById("hpText");
+const hpBar = document.getElementById("hpBar");
+const levelText = document.getElementById("levelText");
+const xpText = document.getElementById("xpText");
+const needText = document.getElementById("needText");
+const xpBar = document.getElementById("xpBar");
+const scoreText = document.getElementById("scoreText");
+const waveText = document.getElementById("waveText");
+const skillButton = document.getElementById("skill");
+const skillCountText = document.getElementById("skillCount");
+const message = document.getElementById("message");
+
+function updateUI() {
+  hpText.textContent = hp;
+  hpBar.style.width = Math.max(0, hp * 10) + "%";
+
+  levelText.textContent = level;
+
+ 
