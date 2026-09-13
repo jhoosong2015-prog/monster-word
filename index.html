@@ -1,263 +1,132 @@
-#<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Monster World</title>
-
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Monster Rush</title>
 <style>
-* {
-  box-sizing: border-box;
-  user-select: none;
-}
-
-body {
-  margin: 0;
-  overflow: hidden;
-  font-family: Arial, sans-serif;
-  background: #10131a;
-  color: white;
-}
-
-#game {
-  position: relative;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-  background:
-    radial-gradient(circle at center, #29313d, #10131a 75%);
-}
-
-#title {
-  position: absolute;
-  top: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 28px;
-  font-weight: bold;
-  z-index: 10;
-}
-
-#stats {
-  position: absolute;
-  top: 15px;
-  left: 15px;
-  z-index: 20;
-  font-size: 17px;
-  line-height: 1.6;
-}
-
-.bar {
-  width: 180px;
-  height: 12px;
-  background: #333;
-  border-radius: 8px;
-  overflow: hidden;
-  margin-top: 3px;
-}
-
-.bar div {
-  height: 100%;
-  width: 100%;
-  transition: width 0.2s;
-}
-
-#hpBar {
-  background: #e53935;
-}
-
-#xpBar {
-  background: #42a5f5;
-}
-
-#skill {
-  position: absolute;
-  right: 15px;
-  top: 15px;
-  z-index: 20;
-  padding: 10px 15px;
-  border: 0;
-  border-radius: 10px;
-  background: #7e57c2;
-  color: white;
-  font-weight: bold;
-  font-size: 15px;
-}
-
-#skill:disabled {
-  opacity: 0.4;
-}
-
-.monster {
-  position: absolute;
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  background: #7e57c2;
-  border: 3px solid white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 35px;
-  cursor: pointer;
-  box-shadow: 0 0 18px #7e57c2;
-  transition: transform 0.1s;
-}
-
-.monster:active {
-  transform: scale(0.8);
-}
-
-.boss {
-  width: 145px;
-  height: 145px;
-  background: #b71c1c;
-  font-size: 75px;
-  box-shadow: 0 0 35px #ff5252;
-  border: 5px solid #ffcc00;
-}
-
-.bossHP {
-  position: absolute;
-  width: 150px;
-  height: 12px;
-  background: #222;
-  border: 1px solid white;
-  border-radius: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: -22px;
-  overflow: hidden;
-}
-
-.bossHP div {
-  height: 100%;
-  width: 100%;
-  background: #ff1744;
-}
-
-.item {
-  position: absolute;
-  width: 55px;
-  height: 55px;
-  border-radius: 15px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 30px;
-  cursor: pointer;
-  border: 2px solid white;
-  animation: float 0.8s infinite alternate;
-}
-
-@keyframes float {
-  from { transform: translateY(0); }
-  to { transform: translateY(-8px); }
-}
-
-#message {
-  position: absolute;
-  left: 50%;
-  bottom: 25px;
-  transform: translateX(-50%);
-  font-size: 20px;
-  font-weight: bold;
-  z-index: 30;
-  text-shadow: 0 2px 5px black;
-}
-
-#gameOver {
-  display: none;
-  position: absolute;
-  inset: 0;
-  background: rgba(0,0,0,0.88);
-  z-index: 100;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  text-align: center;
-}
-
-#gameOver h1 {
-  font-size: 50px;
-}
-
-#restart {
-  padding: 14px 30px;
-  border: 0;
-  border-radius: 10px;
-  font-size: 18px;
-  font-weight: bold;
-}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#090b12;color:#fff;font-family:system-ui,-apple-system,sans-serif}
+#game{display:block;width:100vw;height:100vh;cursor:crosshair;background:radial-gradient(circle at center,#172033 0,#090b12 65%)}
+#hud{position:fixed;left:18px;top:15px;z-index:2;display:flex;gap:10px;flex-wrap:wrap;pointer-events:none}
+.card{background:#111827dd;border:1px solid #334155;border-radius:12px;padding:8px 13px;backdrop-filter:blur(6px);box-shadow:0 5px 20px #0006}
+.card b{font-size:19px}
+#help{position:fixed;right:18px;top:15px;z-index:2;background:#111827cc;border:1px solid #334155;border-radius:12px;padding:9px 12px;font-size:13px;color:#cbd5e1}
+#overlay{position:fixed;inset:0;display:grid;place-items:center;background:#020617aa;z-index:5}
+.panel{width:min(92vw,500px);text-align:center;background:#111827f2;border:1px solid #475569;border-radius:20px;padding:30px;box-shadow:0 20px 80px #0009}
+h1{margin:0 0 10px;font-size:44px;letter-spacing:1px}
+p{color:#cbd5e1;line-height:1.6}
+button{border:0;border-radius:12px;padding:13px 24px;background:#ef4444;color:white;font-weight:800;font-size:16px;cursor:pointer}
+button:hover{background:#f87171}
+.hidden{display:none!important}
 </style>
 </head>
-
 <body>
-
-<div id="game">
-
-  <div id="title">MONSTER WORLD</div>
-
-  <div id="stats">
-    ❤️ HP: <span id="hpText">10</span> / 10
-    <div class="bar"><div id="hpBar"></div></div>
-
-    ⭐ 레벨: <span id="levelText">1</span>
-
-    <br>
-
-    경험치: <span id="xpText">0</span> / <span id="needText">100</span>
-    <div class="bar"><div id="xpBar"></div></div>
-
-    🏆 점수: <span id="scoreText">0</span><br>
-    🌊 웨이브: <span id="waveText">1</span>
-  </div>
-
-  <button id="skill" onclick="useSkill()" disabled>
-    ⚡ 스킬 (<span id="skillCount">0</span>)
-  </button>
-
-  <div id="message"></div>
-
-  <div id="gameOver">
-    <h1>GAME OVER</h1>
-    <p>최종 점수: <span id="finalScore">0</span></p>
-    <p>최종 레벨: <span id="finalLevel">1</span></p>
-    <button id="restart" onclick="restartGame()">다시 시작</button>
-  </div>
-
+<canvas id="game"></canvas>
+<div id="hud">
+  <div class="card">❤️ 체력 <b id="hp">100</b></div>
+  <div class="card">🎯 점수 <b id="score">0</b></div>
+  <div class="card">🌊 웨이브 <b id="wave">1</b></div>
+  <div class="card">🔫 탄약 <b id="ammo">12</b>/12</div>
 </div>
-
+<div id="help">마우스 클릭: 발사 · R: 재장전</div>
+<div id="overlay">
+  <div class="panel">
+    <h1>MONSTER RUSH</h1>
+    <p>괴물들이 사방에서 몰려옵니다.<br>마우스로 조준해서 클릭으로 처치하세요.<br>괴물이 중앙에 닿으면 체력이 줄어듭니다.</p>
+    <button id="start">게임 시작</button>
+  </div>
+</div>
 <script>
-const game = document.getElementById("game");
+const c=document.getElementById('game'),ctx=c.getContext('2d');
+let W,H,dpr,playing=false,last=0,score=0,hp=100,wave=1,ammo=12,reloading=false;
+let monsters=[],particles=[],shots=[],spawnTimer=0,mouse={x:0,y:0};
+const $=id=>document.getElementById(id);
 
-let hp = 10;
-let score = 0;
-let level = 1;
-let xp = 0;
-let needXP = 100;
-let wave = 1;
-let skillCount = 0;
-let shield = false;
-let bossActive = false;
-let gameEnded = false;
+function resize(){dpr=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;c.width=W*dpr;c.height=H*dpr;c.style.width=W+'px';c.style.height=H+'px';ctx.setTransform(dpr,0,0,dpr,0,0)}
+addEventListener('resize',resize);resize();
 
-const hpText = document.getElementById("hpText");
-const hpBar = document.getElementById("hpBar");
-const levelText = document.getElementById("levelText");
-const xpText = document.getElementById("xpText");
-const needText = document.getElementById("needText");
-const xpBar = document.getElementById("xpBar");
-const scoreText = document.getElementById("scoreText");
-const waveText = document.getElementById("waveText");
-const skillButton = document.getElementById("skill");
-const skillCountText = document.getElementById("skillCount");
-const message = document.getElementById("message");
+function reset(){score=0;hp=100;wave=1;ammo=12;monsters=[];particles=[];shots=[];spawnTimer=0;reloading=false;updateHud()}
+function updateHud(){$('hp').textContent=Math.max(0,Math.ceil(hp));$('score').textContent=score;$('wave').textContent=wave;$('ammo').textContent=ammo}
 
-function updateUI() {
-  hpText.textContent = hp;
-  hpBar.style.width = Math.max(0, hp * 10) + "%";
+function spawn(){
+  const a=Math.random()*Math.PI*2, r=Math.max(W,H)*.62;
+  const x=W/2+Math.cos(a)*r, y=H/2+Math.sin(a)*r;
+  const type=Math.random()<Math.min(.15+wave*.015,.35)?'tank':'normal';
+  monsters.push({x,y,r:type==='tank'?30:21,s:type==='tank'?26+wave*1.2:48+wave*2,
+    hp:type==='tank'?3:1,max:type==='tank'?3:1,type,phase:Math.random()*6.28});
+}
+function particle(x,y,n=10){
+ for(let i=0;i<n;i++){let a=Math.random()*Math.PI*2,v=40+Math.random()*180;
+ particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:.35+Math.random()*.45})}
+}
+function shoot(){
+ if(!playing||reloading)return;
+ if(ammo<=0){reload();return}
+ ammo--;updateHud();
+ const dx=mouse.x-W/2,dy=mouse.y-H/2,len=Math.hypot(dx,dy)||1;
+ shots.push({x:W/2,y:H/2,tx:mouse.x,ty:mouse.y,life:.08});
+ let hit=null,dist=Infinity;
+ for(const m of monsters){const t=((m.x-W/2)*dx+(m.y-H/2)*dy)/(len*len);if(t<0)continue;
+   const px=W/2+dx*t,py=H/2+dy*t,d=Math.hypot(m.x-px,m.y-py);
+   if(d<m.r+7&&t<dist){hit=m;dist=t}
+ }
+ if(hit){hit.hp--;particle(hit.x,hit.y,8);score+=hit.hp<=0?(hit.type==='tank'?30:10):3;if(hit.hp<=0)hit.dead=true;updateHud()}
+}
+function reload(){
+ if(reloading||ammo===12)return;
+ reloading=true;$('ammo').textContent='…';
+ setTimeout(()=>{ammo=12;reloading=false;updateHud()},700);
+}
+c.addEventListener('mousemove',e=>{mouse.x=e.clientX;mouse.y=e.clientY});
+c.addEventListener('mousedown',e=>{if(e.button===0)shoot()});
+addEventListener('keydown',e=>{if(e.key.toLowerCase()==='r')reload()});
+$('start').onclick=()=>{reset();playing=true;$('overlay').classList.add('hidden');last=performance.now();requestAnimationFrame(loop)};
 
-  levelText.textContent = level;
+function drawMonster(m){
+ const ang=Math.atan2(H/2-m.y,W/2-m.x);
+ ctx.save();ctx.translate(m.x,m.y);ctx.rotate(ang+Math.PI/2);
+ ctx.shadowBlur=18;ctx.shadowColor=m.type==='tank'?'#f59e0b':'#22c55e';
+ ctx.fillStyle=m.type==='tank'?'#92400e':'#166534';
+ ctx.beginPath();ctx.arc(0,0,m.r,0,Math.PI*2);ctx.fill();
+ ctx.shadowBlur=0;
+ ctx.fillStyle=m.type==='tank'?'#fbbf24':'#86efac';
+ ctx.beginPath();ctx.arc(-7,-4,4,0,Math.PI*2);ctx.arc(7,-4,4,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle='#020617';ctx.beginPath();ctx.arc(-7,-4,1.7,0,Math.PI*2);ctx.arc(7,-4,1.7,0,Math.PI*2);ctx.fill();
+ ctx.strokeStyle='#020617';ctx.lineWidth=4;ctx.beginPath();ctx.arc(0,5,9,0,Math.PI);ctx.stroke();
+ if(m.type==='tank'){ctx.strokeStyle='#fbbf24';ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,0,m.r+5,0,Math.PI*2);ctx.stroke()}
+ ctx.restore();
+}
 
- 
+function loop(now){
+ if(!playing)return;
+ const dt=Math.min((now-last)/1000,.033);last=now;
+ ctx.clearRect(0,0,W,H);
+ // arena
+ ctx.strokeStyle='#1e293b';ctx.lineWidth=2;
+ for(let r=90;r<Math.max(W,H);r+=90){ctx.beginPath();ctx.arc(W/2,H/2,r,0,Math.PI*2);ctx.stroke()}
+ // spawn
+ spawnTimer-=dt;if(spawnTimer<=0){spawn();spawnTimer=Math.max(.22,1.0-wave*.035)}
+ if(score>0&&score%100<2)wave=Math.max(wave,Math.floor(score/100)+1);
+ // monsters
+ for(const m of monsters){
+   const dx=W/2-m.x,dy=H/2-m.y,len=Math.hypot(dx,dy)||1;
+   m.x+=dx/len*m.s*dt;m.y+=dy/len*m.s*dt;m.phase+=dt*5;
+   if(len<m.r+35){hp-= (m.type==='tank'?13:8)*dt; m.x-=dx/len*12*dt;m.y-=dy/len*12*dt}
+ }
+ monsters=monsters.filter(m=>!m.dead);
+ if(hp<=0){gameOver();return}
+ // particles
+ for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.93;p.vy*=.93;p.life-=dt}
+ particles=particles.filter(p=>p.life>0);
+ for(const p of particles){ctx.globalAlpha=Math.max(0,p.life*2);ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(p.x,p.y,3,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1;
+ for(const s of shots){ctx.globalAlpha=s.life/.08;ctx.strokeStyle='#f8fafc';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(s.tx,s.ty);ctx.stroke();s.life-=dt}shots=shots.filter(s=>s.life>0);
+ for(const m of monsters)drawMonster(m);
+ // player
+ ctx.fillStyle='#e2e8f0';ctx.shadowBlur=18;ctx.shadowColor='#38bdf8';ctx.beginPath();ctx.arc(W/2,H/2,18,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+ const a=Math.atan2(mouse.y-H/2,mouse.x-W/2);ctx.save();ctx.translate(W/2,H/2);ctx.rotate(a);ctx.fillStyle='#64748b';ctx.fillRect(8,-5,31,10);ctx.restore();
+ updateHud();requestAnimationFrame(loop)
+}
+function gameOver(){playing=false;$('overlay').classList.remove('hidden');$('overlay').querySelector('h1').textContent='GAME OVER';$('overlay').querySelector('p').innerHTML=`최종 점수: <b>${score}</b><br>웨이브 ${wave}까지 버텼습니다.`;$('start').textContent='다시 시작'}
+</script>
+</body>
+</html>
