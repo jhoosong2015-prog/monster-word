@@ -1,0 +1,1793 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>MONSTER WORLD</title>
+<style>
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+  user-select:none;
+  -webkit-user-select:none;
+  touch-action:none;
+}
+html,body{
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:#030305;
+  font-family:Arial,Helvetica,sans-serif;
+  color:#fff;
+}
+#game{
+  position:relative;
+  width:100vw;
+  height:100vh;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 50% 50%,#15151d 0%,#08080d 48%,#020203 100%);
+}
+canvas{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+}
+/* ---------------- HUD ---------------- */
+#hud{
+  position:absolute;
+  left:14px;
+  top:12px;
+  right:14px;
+  display:flex;
+  justify-content:space-between;
+  z-index:10;
+  pointer-events:none;
+}
+.hud-left,
+.hud-right{
+  display:flex;
+  gap:8px;
+}
+.card{
+  min-width:82px;
+  padding:8px 11px;
+  border:1px solid #30303b;
+  border-radius:10px;
+  background:rgba(8,8,13,.82);
+  box-shadow:0 5px 25px rgba(0,0,0,.35);
+  font-size:11px;
+  color:#888895;
+}
+.card b{
+  display:block;
+  color:#f2f2f4;
+  font-size:17px;
+  margin-top:2px;
+}
+.hp-card{
+  min-width:155px;
+}
+#hpBar{
+  width:130px;
+  height:6px;
+  margin-top:5px;
+  background:#24242d;
+  border-radius:10px;
+  overflow:hidden;
+}
+#hpFill{
+  height:100%;
+  width:100%;
+  background:#e7e7ea;
+  transition:width .15s;
+}
+#bossBar{
+  position:absolute;
+  left:50%;
+  top:78px;
+  transform:translateX(-50%);
+  width:min(440px,65vw);
+  display:none;
+  z-index:11;
+}
+#bossName{
+  text-align:center;
+  font-size:12px;
+  letter-spacing:4px;
+  margin-bottom:6px;
+  color:#dddde4;
+}
+#bossHpBack{
+  height:8px;
+  border:1px solid #464650;
+  background:#0b0b10;
+  border-radius:20px;
+  overflow:hidden;
+}
+#bossHpFill{
+  height:100%;
+  width:100%;
+  background:#e5e5ea;
+}
+/* ---------------- MENU ---------------- */
+#overlay{
+  position:absolute;
+  inset:0;
+  z-index:50;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(2,2,5,.78);
+  backdrop-filter:blur(7px);
+}
+.menu{
+  width:min(460px,90vw);
+  padding:32px;
+  text-align:center;
+  border:1px solid #3a3a47;
+  border-radius:18px;
+  background:rgba(9,9,15,.96);
+  box-shadow:0 25px 80px rgba(0,0,0,.65);
+}
+.menu h1{
+  font-size:36px;
+  letter-spacing:6px;
+  margin-bottom:7px;
+}
+.menu .sub{
+  color:#777784;
+  letter-spacing:3px;
+  font-size:11px;
+  margin-bottom:22px;
+}
+.menu p{
+  color:#aaaab5;
+  font-size:13px;
+  line-height:1.7;
+  margin-bottom:22px;
+}
+#start{
+  padding:12px 30px;
+  border:1px solid #777783;
+  border-radius:9px;
+  background:#ededf0;
+  color:#08080c;
+  font-weight:900;
+  letter-spacing:2px;
+}
+/* ---------------- MOBILE ---------------- */
+#joystick{
+  position:absolute;
+  left:24px;
+  bottom:25px;
+  width:125px;
+  height:125px;
+  border:1px solid rgba(255,255,255,.16);
+  border-radius:50%;
+  background:rgba(255,255,255,.025);
+  z-index:20;
+}
+#stick{
+  position:absolute;
+  left:35px;
+  top:35px;
+  width:53px;
+  height:53px;
+  border-radius:50%;
+  background:rgba(230,230,235,.16);
+  border:1px solid rgba(255,255,255,.22);
+}
+#skill{
+  position:absolute;
+  right:28px;
+  bottom:29px;
+  width:90px;
+  height:90px;
+  border-radius:50%;
+  border:1px solid rgba(255,255,255,.35);
+  background:rgba(13,13,20,.9);
+  color:#eee;
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:2px;
+  z-index:20;
+}
+#skill.cool{
+  opacity:.35;
+}
+/* ---------------- ROTATE ---------------- */
+#rotate{
+  display:none;
+  position:absolute;
+  inset:0;
+  z-index:100;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:30px;
+  background:#030305;
+  color:#eee;
+  font-size:16px;
+}
+@media(max-aspect-ratio:1/1){
+  #rotate{
+    display:flex;
+  }
+}
+</style>
+</head>
+<body>
+<div id="game">
+<canvas id="canvas"></canvas>
+<div id="hud">
+  <div class="hud-left">
+    <div class="card hp-card">
+      HP
+      <b id="hp">100</b>
+      <div id="hpBar">
+        <div id="hpFill"></div>
+      </div>
+    </div>
+    <div class="card">
+      LEVEL
+      <b id="level">1</b>
+    </div>
+    <div class="card">
+      SCORE
+      <b id="score">0</b>
+    </div>
+  </div>
+  <div class="hud-right">
+    <div class="card">
+      WAVE
+      <b id="wave">1</b>
+    </div>
+    <div class="card">
+      EXP
+      <b id="exp">0 / 100</b>
+    </div>
+  </div>
+</div>
+<div id="bossBar">
+  <div id="bossName">VOID WARDEN</div>
+  <div id="bossHpBack">
+    <div id="bossHpFill"></div>
+  </div>
+</div>
+<div id="joystick">
+  <div id="stick"></div>
+</div>
+<button id="skill">VOID<br>SKILL</button>
+<div id="overlay">
+  <div class="menu">
+    <h1>MONSTER WORLD</h1>
+    <div class="sub">THE WORLD HAS FALLEN</div>
+    <p id="menuText">
+      어둠 속에서 몬스터가 나타난다.<br>
+      움직이며 에너지 공격으로 몬스터를 쓰러뜨리고<br>
+      보스 웨이브까지 살아남아라.
+    </p>
+    <button id="start">START</button>
+  </div>
+</div>
+<div id="rotate">
+  휴대폰을 가로로 돌려주세요.
+</div>
+</div>
+<script>
+const canvas=document.getElementById("canvas");
+const ctx=canvas.getContext("2d");
+let W=0;
+let H=0;
+let dpr=1;
+let playing=false;
+let last=0;
+let score=0;
+let hp=100;
+let level=1;
+let exp=0;
+let wave=1;
+let monsters=[];
+let particles=[];
+let projectiles=[];
+let rings=[];
+let texts=[];
+let spawnTimer=0;
+let waveTimer=0;
+let boss=null;
+let bossWave=false;
+let skillCooldown=0;
+const keys={};
+const joystick={
+  active:false,
+  x:0,
+  y:0
+};
+const mouse={
+  x:0,
+  y:0
+};
+const player={
+  x:0,
+  y:0,
+  speed:230,
+  walk:0,
+  facing:0,
+  hurt:0
+};
+function $(id){
+  return document.getElementById(id);
+}
+/* ---------------- RESIZE ---------------- */
+function resize(){
+  dpr=Math.min(window.devicePixelRatio||1,2);
+  W=window.innerWidth;
+  H=window.innerHeight;
+  canvas.width=W*dpr;
+  canvas.height=H*dpr;
+  canvas.style.width=W+"px";
+  canvas.style.height=H+"px";
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  if(!player.x){
+    player.x=W/2;
+    player.y=H/2;
+  }
+}
+window.addEventListener("resize",resize);
+resize();
+/* ---------------- RESET ---------------- */
+function reset(){
+  score=0;
+  hp=100;
+  level=1;
+  exp=0;
+  wave=1;
+  monsters=[];
+  particles=[];
+  projectiles=[];
+  rings=[];
+  texts=[];
+  boss=null;
+  bossWave=false;
+  spawnTimer=1.4;
+  waveTimer=0;
+  skillCooldown=0;
+  player.x=W/2;
+  player.y=H/2;
+  player.walk=0;
+  player.hurt=0;
+  updateHUD();
+}
+/* ---------------- HUD ---------------- */
+function updateHUD(){
+  $("hp").textContent=Math.max(0,Math.ceil(hp));
+  $("level").textContent=level;
+  $("score").textContent=score;
+  $("wave").textContent=wave;
+  $("exp").textContent=exp+" / "+(level*100);
+  $("hpFill").style.width=Math.max(0,hp)+"%";
+  if(boss){
+    $("bossBar").style.display="block";
+    $("bossHpFill").style.width=
+      Math.max(0,boss.hp/boss.maxHp*100)+"%";
+  }else{
+    $("bossBar").style.display="none";
+  }
+}
+/* ---------------- PARTICLES ---------------- */
+function particle(x,y,count=10,style="normal"){
+  for(let i=0;i<count;i++){
+    const a=Math.random()*Math.PI*2;
+    const speed=
+      style==="burst"
+      ? 80+Math.random()*330
+      : 30+Math.random()*160;
+    particles.push({
+      x:x,
+      y:y,
+      vx:Math.cos(a)*speed,
+      vy:Math.sin(a)*speed,
+      life:.3+Math.random()*.55,
+      max:.7,
+      size:1+Math.random()*3,
+      style:style
+    });
+  }
+}
+/* ---------------- TEXT ---------------- */
+function floatingText(x,y,text){
+  texts.push({
+    x:x,
+    y:y,
+    text:text,
+    life:.8
+  });
+}
+/* ---------------- SPAWN ---------------- */
+function spawnMonster(){
+  if(bossWave) return;
+  /*
+    몬스터가 너무 많이 몰리지 않도록
+    웨이브별 최대 개체 수 제한
+  */
+  const maxMonsters=Math.min(5+Math.floor(wave*.6),10);
+  if(monsters.length>=maxMonsters) return;
+  const angle=Math.random()*Math.PI*2;
+  const distance=
+    Math.max(W,H)*.58+
+    Math.random()*100;
+  const x=
+    W/2+
+    Math.cos(angle)*distance;
+  const y=
+    H/2+
+    Math.sin(angle)*distance;
+  const type=Math.random()<.25
+    ?"stalker"
+    :"shade";
+  const hpValue=
+    type==="stalker"
+    ?3+Math.floor(wave*.4)
+    :1+Math.floor(wave*.2);
+  monsters.push({
+    x:x,
+    y:y,
+    type:type,
+    r:type==="stalker"?23:19,
+    hp:hpValue,
+    maxHp:hpValue,
+    speed:
+      type==="stalker"
+      ?45+wave*2
+      :30+wave*1.4,
+    phase:Math.random()*Math.PI*2,
+    hit:0,
+    dead:false
+  });
+}
+/* ---------------- BOSS ---------------- */
+function startBoss(){
+  /*
+    핵심:
+    보스 등장 순간 일반 몬스터 전부 제거
+  */
+  monsters.length=0;
+  bossWave=true;
+  boss={
+    x:W/2,
+    y:-180,
+    r:68,
+    hp:80+wave*22,
+    maxHp:80+wave*22,
+    speed:28,
+    phase:0,
+    hit:0,
+    intro:2.2,
+    attackTimer:1.2
+  };
+  particle(W/2,100,45,"burst");
+  rings.push({
+    x:W/2,
+    y:100,
+    r:10,
+    max:250,
+    life:1.3
+  });
+  floatingText(W/2,180,"VOID WARDEN");
+  updateHUD();
+}
+/* ---------------- NEXT WAVE ---------------- */
+function nextWave(){
+  wave++;
+  /*
+    5웨이브마다 보스
+  */
+  if(wave%5===0){
+    startBoss();
+    return;
+  }
+  bossWave=false;
+  spawnTimer=1.5;
+  floatingText(
+    W/2,
+    H/2-100,
+    "WAVE "+wave
+  );
+  updateHUD();
+}
+/* ---------------- EXP ---------------- */
+function addExp(amount){
+  exp+=amount;
+  const needed=level*100;
+  if(exp>=needed){
+    exp-=needed;
+    level++;
+    hp=Math.min(100,hp+15);
+    particle(
+      player.x,
+      player.y,
+      35,
+      "burst"
+    );
+    rings.push({
+      x:player.x,
+      y:player.y,
+      r:10,
+      max:130,
+      life:.7
+    });
+    floatingText(
+      player.x,
+      player.y-70,
+      "LEVEL UP"
+    );
+  }
+}
+/* ---------------- ATTACK ---------------- */
+function attack(){
+  if(!playing) return;
+  const dx=mouse.x-player.x;
+  const dy=mouse.y-player.y;
+  const len=Math.hypot(dx,dy)||1;
+  const vx=dx/len;
+  const vy=dy/len;
+  player.facing=Math.atan2(dy,dx);
+  projectiles.push({
+    x:player.x,
+    y:player.y,
+    vx:vx*600,
+    vy:vy*600,
+    life:.85,
+    size:7
+  });
+  particle(
+    player.x+vx*20,
+    player.y+vy*20,
+    5
+  );
+}
+/* ---------------- SKILL ---------------- */
+function useSkill(){
+  if(!playing) return;
+  if(skillCooldown>0) return;
+  skillCooldown=5;
+  const radius=170;
+  rings.push({
+    x:player.x,
+    y:player.y,
+    r:10,
+    max:radius,
+    life:.65
+  });
+  particle(
+    player.x,
+    player.y,
+    70,
+    "burst"
+  );
+  /*
+    근처 적에게 강한 에너지 피해
+  */
+  for(const m of monsters){
+    const d=Math.hypot(
+      m.x-player.x,
+      m.y-player.y
+    );
+    if(d<radius){
+      m.hp-=3+level;
+      m.hit=.2;
+      particle(
+        m.x,
+        m.y,
+        18,
+        "burst"
+      );
+      if(m.hp<=0){
+        killMonster(m);
+      }
+    }
+  }
+  if(boss){
+    const d=Math.hypot(
+      boss.x-player.x,
+      boss.y-player.y
+    );
+    if(d<radius+boss.r){
+      boss.hp-=10+level*2;
+      boss.hit=.25;
+      particle(
+        boss.x,
+        boss.y,
+        30,
+        "burst"
+      );
+    }
+  }
+  updateHUD();
+}
+/* ---------------- KILL ---------------- */
+function killMonster(m){
+  if(m.dead) return;
+  m.dead=true;
+  score+=m.type==="stalker"?30:12;
+  addExp(m.type==="stalker"?25:10);
+  particle(
+    m.x,
+    m.y,
+    24,
+    "burst"
+  );
+  rings.push({
+    x:m.x,
+    y:m.y,
+    r:5,
+    max:45,
+    life:.35
+  });
+}
+/* ---------------- INPUT ---------------- */
+canvas.addEventListener(
+  "mousemove",
+  e=>{
+    mouse.x=e.clientX;
+    mouse.y=e.clientY;
+  }
+);
+canvas.addEventListener(
+  "mousedown",
+  e=>{
+    if(e.button===0){
+      attack();
+    }
+  }
+);
+window.addEventListener(
+  "keydown",
+  e=>{
+    keys[e.key.toLowerCase()]=true;
+    if(e.key===" "){
+      useSkill();
+    }
+  }
+);
+window.addEventListener(
+  "keyup",
+  e=>{
+    keys[e.key.toLowerCase()]=false;
+  }
+);
+$("skill").addEventListener(
+  "pointerdown",
+  e=>{
+    e.preventDefault();
+    useSkill();
+  }
+);
+/* ---------------- JOYSTICK ---------------- */
+const joystickElement=$("joystick");
+const stick=$("stick");
+joystickElement.addEventListener(
+  "pointerdown",
+  e=>{
+    joystick.active=true;
+    joystickElement.setPointerCapture(e.pointerId);
+  }
+);
+joystickElement.addEventListener(
+  "pointermove",
+  e=>{
+    if(!joystick.active) return;
+    const rect=joystickElement.getBoundingClientRect();
+    const cx=rect.left+rect.width/2;
+    const cy=rect.top+rect.height/2;
+    let dx=e.clientX-cx;
+    let dy=e.clientY-cy;
+    const max=42;
+    const len=Math.hypot(dx,dy);
+    if(len>max){
+      dx=dx/len*max;
+      dy=dy/len*max;
+    }
+    joystick.x=dx/max;
+    joystick.y=dy/max;
+    stick.style.transform=
+      `translate(${dx}px,${dy}px)`;
+  }
+);
+function releaseJoystick(){
+  joystick.active=false;
+  joystick.x=0;
+  joystick.y=0;
+  stick.style.transform="translate(0,0)";
+}
+joystickElement.addEventListener(
+  "pointerup",
+  releaseJoystick
+);
+joystickElement.addEventListener(
+  "pointercancel",
+  releaseJoystick
+);
+/* ---------------- PLAYER ---------------- */
+function updatePlayer(dt){
+  let dx=0;
+  let dy=0;
+  if(keys["w"]||keys["arrowup"]) dy-=1;
+  if(keys["s"]||keys["arrowdown"]) dy+=1;
+  if(keys["a"]||keys["arrowleft"]) dx-=1;
+  if(keys["d"]||keys["arrowright"]) dx+=1;
+  if(joystick.active){
+    dx+=joystick.x;
+    dy+=joystick.y;
+  }
+  const len=Math.hypot(dx,dy);
+  if(len>0){
+    dx/=len;
+    dy/=len;
+    player.x+=dx*player.speed*dt;
+    player.y+=dy*player.speed*dt;
+    player.walk+=dt*10;
+  }else{
+    player.walk*=.85;
+  }
+  player.x=Math.max(40,Math.min(W-40,player.x));
+  player.y=Math.max(70,Math.min(H-40,player.y));
+  if(mouse.x||mouse.y){
+    player.facing=
+      Math.atan2(
+        mouse.y-player.y,
+        mouse.x-player.x
+      );
+  }
+  player.hurt=Math.max(
+    0,
+    player.hurt-dt
+  );
+}
+/* ---------------- MONSTERS ---------------- */
+function updateMonsters(dt){
+  if(bossWave) return;
+  for(const m of monsters){
+    if(m.dead) continue;
+    m.phase+=dt*5;
+    m.hit=Math.max(
+      0,
+      m.hit-dt
+    );
+    const dx=player.x-m.x;
+    const dy=player.y-m.y;
+    const dist=Math.hypot(dx,dy)||1;
+    m.x+=dx/dist*m.speed*dt;
+    m.y+=dy/dist*m.speed*dt;
+    /*
+      플레이어와 너무 가까워지면
+      지속적으로 체력 감소
+    */
+    if(dist<m.r+22){
+      hp-=
+        (m.type==="stalker"?13:8)
+        *dt;
+      player.hurt=.15;
+      /*
+        밀어내기
+      */
+      m.x-=dx/dist*35*dt;
+      m.y-=dy/dist*35*dt;
+    }
+  }
+  monsters=
+    monsters.filter(
+      m=>!m.dead
+    );
+}
+/* ---------------- PROJECTILES ---------------- */
+function updateProjectiles(dt){
+  for(const p of projectiles){
+    p.x+=p.vx*dt;
+    p.y+=p.vy*dt;
+    p.life-=dt;
+    /*
+      몬스터 충돌
+    */
+    if(!bossWave){
+      for(const m of monsters){
+        if(m.dead) continue;
+        const d=Math.hypot(
+          p.x-m.x,
+          p.y-m.y
+        );
+        if(d<m.r+p.size){
+          m.hp-=1;
+          m.hit=.16;
+          particle(
+            p.x,
+            p.y,
+            8
+          );
+          p.life=0;
+          if(m.hp<=0){
+            killMonster(m);
+          }
+          break;
+        }
+      }
+    }
+    /*
+      보스 충돌
+    */
+    if(
+      boss &&
+      p.life>0
+    ){
+      const d=Math.hypot(
+        p.x-boss.x,
+        p.y-boss.y
+      );
+      if(d<boss.r+p.size){
+        boss.hp-=1;
+        boss.hit=.12;
+        particle(
+          p.x,
+          p.y,
+          9
+        );
+        p.life=0;
+      }
+    }
+  }
+  projectiles=
+    projectiles.filter(
+      p=>
+        p.life>0 &&
+        p.x>-50 &&
+        p.x<W+50 &&
+        p.y>-50 &&
+        p.y<H+50
+    );
+}
+/* ---------------- BOSS UPDATE ---------------- */
+function updateBoss(dt){
+  if(!boss) return;
+  boss.phase+=dt*2;
+  boss.hit=Math.max(
+    0,
+    boss.hit-dt
+  );
+  /*
+    등장 연출
+  */
+  if(boss.intro>0){
+    boss.intro-=dt;
+    boss.y+=
+      (H/2-boss.y)*dt*1.2;
+    return;
+  }
+  /*
+    플레이어 추적
+  */
+  const dx=player.x-boss.x;
+  const dy=player.y-boss.y;
+  const dist=Math.hypot(dx,dy)||1;
+  boss.x+=dx/dist*boss.speed*dt;
+  boss.y+=dy/dist*boss.speed*dt;
+  boss.attackTimer-=dt;
+  /*
+    보스가 가까이 오면
+    충격파 공격
+  */
+  if(boss.attackTimer<=0){
+    boss.attackTimer=2.5;
+    rings.push({
+      x:boss.x,
+      y:boss.y,
+      r:15,
+      max:100,
+      life:.55
+    });
+    particle(
+      boss.x,
+      boss.y,
+      22,
+      "burst"
+    );
+    if(dist<120){
+      hp-=12;
+      player.hurt=.3;
+    }
+  }
+  /*
+    보스 사망
+  */
+  if(boss.hp<=0){
+    particle(
+      boss.x,
+      boss.y,
+      100,
+      "burst"
+    );
+    rings.push({
+      x:boss.x,
+      y:boss.y,
+      r:10,
+      max:400,
+      life:1.2
+    });
+    score+=500;
+    addExp(150);
+    floatingText(
+      boss.x,
+      boss.y,
+      "BOSS DEFEATED"
+    );
+    boss=null;
+    bossWave=false;
+    waveTimer=3;
+    updateHUD();
+  }
+}
+/* ---------------- BOSS DRAW ---------------- */
+function drawBoss(){
+  if(!boss) return;
+  const x=boss.x;
+  const y=boss.y;
+  ctx.save();
+  ctx.translate(x,y);
+  const pulse=
+    Math.sin(boss.phase)*4;
+  /*
+    외부 에너지
+  */
+  ctx.shadowBlur=
+    boss.hit>0
+    ?35
+    :18;
+  ctx.shadowColor="#e8e8ee";
+  ctx.strokeStyle=
+    "rgba(230,230,238,.35)";
+  ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.arc(
+    0,
+    0,
+    boss.r+10+pulse,
+    0,
+    Math.PI*2
+  );
+  ctx.stroke();
+  /*
+    몸
+  */
+  ctx.fillStyle="#09090e";
+  ctx.beginPath();
+  ctx.moveTo(-38,25);
+  ctx.lineTo(-28,-15);
+  ctx.lineTo(-17,-42);
+  ctx.lineTo(0,-52);
+  ctx.lineTo(17,-42);
+  ctx.lineTo(28,-15);
+  ctx.lineTo(38,25);
+  ctx.lineTo(24,52);
+  ctx.lineTo(0,65);
+  ctx.lineTo(-24,52);
+  ctx.closePath();
+  ctx.fill();
+  /*
+    해골 얼굴
+  */
+  ctx.fillStyle="#dedee4";
+  ctx.beginPath();
+  ctx.arc(
+    0,
+    -13,
+    34,
+    0,
+    Math.PI*2
+  );
+  ctx.fill();
+  /*
+    눈구멍
+  */
+  ctx.fillStyle="#09090d";
+  ctx.beginPath();
+  ctx.ellipse(
+    -13,
+    -16,
+    9,
+    13,
+    -.25,
+    0,
+    Math.PI*2
+  );
+  ctx.ellipse(
+    13,
+    -16,
+    9,
+    13,
+    .25,
+    0,
+    Math.PI*2
+  );
+  ctx.fill();
+  /*
+    눈빛
+  */
+  ctx.fillStyle="#fff";
+  ctx.shadowBlur=12;
+  ctx.shadowColor="#fff";
+  ctx.fillRect(
+    -15,
+    -17,
+    4,
+    8
+  );
+  ctx.fillRect(
+    11,
+    -17,
+    4,
+    8
+  );
+  ctx.shadowBlur=0;
+  /*
+    코
+  */
+  ctx.fillStyle="#888892";
+  ctx.beginPath();
+  ctx.moveTo(0,-4);
+  ctx.lineTo(-5,4);
+  ctx.lineTo(5,4);
+  ctx.closePath();
+  ctx.fill();
+  /*
+    턱
+  */
+  ctx.strokeStyle="#25252d";
+  ctx.lineWidth=3;
+  ctx.beginPath();
+  ctx.moveTo(-17,12);
+  ctx.quadraticCurveTo(
+    0,
+    28,
+    17,
+    12
+  );
+  ctx.stroke();
+  /*
+    코트
+  */
+  ctx.fillStyle="#111117";
+  ctx.beginPath();
+  ctx.moveTo(-25,35);
+  ctx.lineTo(-50,75);
+  ctx.lineTo(-18,63);
+  ctx.lineTo(0,82);
+  ctx.lineTo(18,63);
+  ctx.lineTo(50,75);
+  ctx.lineTo(25,35);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+/* ---------------- PLAYER DRAW ---------------- */
+function drawPlayer(){
+  const x=player.x;
+  const y=player.y;
+  const walking=
+    Math.sin(player.walk);
+  const step=
+    Math.sin(player.walk)*8;
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.rotate(player.facing);
+  if(player.hurt>0){
+    ctx.globalAlpha=
+      .55+
+      Math.sin(performance.now()/40)*.25;
+  }
+  /*
+    그림자
+  */
+  ctx.fillStyle="rgba(0,0,0,.45)";
+  ctx.beginPath();
+  ctx.ellipse(
+    0,
+    25,
+    24,
+    8,
+    0,
+    0,
+    Math.PI*2
+  );
+  ctx.fill();
+  /*
+    코트 뒷자락
+    걷기에 따라 흔들림
+  */
+  ctx.fillStyle="#111116";
+  ctx.beginPath();
+  ctx.moveTo(-17,12);
+  ctx.lineTo(-31,48+step*.35);
+  ctx.lineTo(-9,40);
+  ctx.lineTo(0,51+step*.25);
+  ctx.lineTo(9,40);
+  ctx.lineTo(31,48-step*.35);
+  ctx.lineTo(17,12);
+  ctx.closePath();
+  ctx.fill();
+  /*
+    다리
+  */
+  ctx.strokeStyle="#cfcfd5";
+  ctx.lineWidth=7;
+  ctx.lineCap="round";
+  ctx.beginPath();
+  ctx.moveTo(-8,30);
+  ctx.lineTo(-10-step*.45,48);
+  ctx.moveTo(8,30);
+  ctx.lineTo(10+step*.45,48);
+  ctx.stroke();
+  /*
+    신발
+  */
+  ctx.lineWidth=6;
+  ctx.beginPath();
+  ctx.moveTo(-10-step*.45,48);
+  ctx.lineTo(-18-step*.45,48);
+  ctx.moveTo(10+step*.45,48);
+  ctx.lineTo(18+step*.45,48);
+  ctx.stroke();
+  /*
+    몸
+  */
+  ctx.fillStyle="#17171e";
+  ctx.beginPath();
+  ctx.moveTo(-16,0);
+  ctx.lineTo(-18,32);
+  ctx.lineTo(18,32);
+  ctx.lineTo(16,0);
+  ctx.closePath();
+  ctx.fill();
+  /*
+    팔 걷기
+  */
+  ctx.strokeStyle="#cfcfd5";
+  ctx.lineWidth=7;
+  ctx.beginPath();
+  ctx.moveTo(-14,5);
+  ctx.lineTo(-25,-4+step*.55);
+  ctx.moveTo(14,5);
+  ctx.lineTo(25,-4-step*.55);
+  ctx.stroke();
+  /*
+    손
+  */
+  ctx.fillStyle="#d7d7dc";
+  ctx.beginPath();
+  ctx.arc(
+    -25,
+    -4+step*.55,
+    4,
+    0,
+    Math.PI*2
+  );
+  ctx.arc(
+    25,
+    -4-step*.55,
+    4,
+    0,
+    Math.PI*2
+  );
+  ctx.fill();
+  /*
+    목
+  */
+  ctx.fillStyle="#cfcfd5";
+  ctx.fillRect(
+    -5,
+    -14,
+    10,
+    10
+  );
+  /*
+    해골 머리
+  */
+  ctx.shadowBlur=16;
+  ctx.shadowColor=
+    "rgba(230,230,240,.25)";
+  ctx.fillStyle="#e2e2e6";
+  ctx.beginPath();
+  ctx.arc(
+    0,
+    -27,
+    20,
+    0,
+    Math.PI*2
+  );
+  ctx.fill();
+  ctx.shadowBlur=0;
+  /*
+    눈구멍
+  */
+  ctx.fillStyle="#08080c";
+  ctx.beginPath();
+  ctx.ellipse(
+    -8,
+    -29,
+    6,
+    8,
+    -.2,
+    0,
+    Math.PI*2
+  );
+  ctx.ellipse(
+    8,
+    -29,
+    6,
+    8,
+    .2,
+    0,
+    Math.PI*2
+  );
+  ctx.fill();
+  /*
+    눈빛
+  */
+  ctx.fillStyle="#f5f5f7";
+  ctx.fillRect(
+    -10,
+    -31,
+    3,
+    5
+  );
+  ctx.fillRect(
+    7,
+    -31,
+    3,
+    5
+  );
+  /*
+    코
+  */
+  ctx.fillStyle="#777780";
+  ctx.beginPath();
+  ctx.moveTo(0,-24);
+  ctx.lineTo(-3,-19);
+  ctx.lineTo(3,-19);
+  ctx.closePath();
+  ctx.fill();
+  /*
+    입
+  */
+  ctx.strokeStyle="#66666f";
+  ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.moveTo(-9,-14);
+  ctx.lineTo(9,-14);
+  ctx.stroke();
+  ctx.restore();
+}
+/* ---------------- MONSTER DRAW ---------------- */
+function drawMonster(m){
+  ctx.save();
+  ctx.translate(m.x,m.y);
+  const wobble=
+    Math.sin(m.phase)*2;
+  /*
+    공격받았을 때 밝아짐
+  */
+  if(m.hit>0){
+    ctx.globalAlpha=.55+
+      Math.sin(performance.now()/30)*.35;
+  }
+  /*
+    SHADOW
+    날씬하고 기괴한 실루엣
+  */
+  if(m.type==="shade"){
+    ctx.rotate(
+      Math.sin(m.phase*.7)*.06
+    );
+    /*
+      몸
+    */
+    ctx.fillStyle="#101016";
+    ctx.beginPath();
+    ctx.moveTo(0,-30);
+    ctx.lineTo(15,-8);
+    ctx.lineTo(12,22);
+    ctx.lineTo(5,35);
+    ctx.lineTo(0,25);
+    ctx.lineTo(-5,35);
+    ctx.lineTo(-12,22);
+    ctx.lineTo(-15,-8);
+    ctx.closePath();
+    ctx.fill();
+    /*
+      머리
+    */
+    ctx.fillStyle="#d4d4da";
+    ctx.beginPath();
+    ctx.ellipse(
+      0,
+      -10,
+      15,
+      18,
+      0,
+      0,
+      Math.PI*2
+    );
+    ctx.fill();
+    /*
+      검은 얼굴
+    */
+    ctx.fillStyle="#08080b";
+    ctx.beginPath();
+    ctx.ellipse(
+      -6,
+      -11,
+      4,
+      6,
+      -.2,
+      0,
+      Math.PI*2
+    );
+    ctx.ellipse(
+      6,
+      -11,
+      4,
+      6,
+      .2,
+      0,
+      Math.PI*2
+    );
+    ctx.fill();
+    /*
+      빛나는 눈
+    */
+    ctx.fillStyle="#fff";
+    ctx.fillRect(
+      -7,
+      -12,
+      2,
+      4
+    );
+    ctx.fillRect(
+      5,
+      -12,
+      2,
+      4
+    );
+    /*
+      긴 팔
+    */
+    ctx.strokeStyle="#17171d";
+    ctx.lineWidth=6;
+    ctx.lineCap="round";
+    ctx.beginPath();
+    ctx.moveTo(-11,3);
+    ctx.lineTo(-25,18+wobble);
+    ctx.moveTo(11,3);
+    ctx.lineTo(25,18-wobble);
+    ctx.stroke();
+  }else{
+    /*
+      STALKER
+      더 크고 날카로운 몬스터
+    */
+    ctx.rotate(
+      Math.sin(m.phase*.5)*.04
+    );
+    ctx.fillStyle="#0b0b10";
+    ctx.beginPath();
+    ctx.moveTo(0,-38);
+    ctx.lineTo(22,-8);
+    ctx.lineTo(31,24);
+    ctx.lineTo(10,18);
+    ctx.lineTo(0,39);
+    ctx.lineTo(-10,18);
+    ctx.lineTo(-31,24);
+    ctx.lineTo(-22,-8);
+    ctx.closePath();
+    ctx.fill();
+    /*
+      머리
+    */
+    ctx.fillStyle="#bcbcc4";
+    ctx.beginPath();
+    ctx.moveTo(-18,-15);
+    ctx.lineTo(-8,-31);
+    ctx.lineTo(8,-31);
+    ctx.lineTo(18,-15);
+    ctx.lineTo(12,8);
+    ctx.lineTo(0,15);
+    ctx.lineTo(-12,8);
+    ctx.closePath();
+    ctx.fill();
+    /*
+      눈
+    */
+    ctx.fillStyle="#07070b";
+    ctx.beginPath();
+    ctx.moveTo(-13,-16);
+    ctx.lineTo(-3,-19);
+    ctx.lineTo(-5,-7);
+    ctx.closePath();
+    ctx.moveTo(13,-16);
+    ctx.lineTo(3,-19);
+    ctx.lineTo(5,-7);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle="#f2f2f4";
+    ctx.fillRect(-10,-15,4,3);
+    ctx.fillRect(6,-15,4,3);
+    /*
+      입
+    */
+    ctx.strokeStyle="#4a4a52";
+    ctx.lineWidth=3;
+    ctx.beginPath();
+    ctx.moveTo(-8,3);
+    ctx.lineTo(8,3);
+    ctx.stroke();
+    /*
+      어깨/팔
+    */
+    ctx.strokeStyle="#121218";
+    ctx.lineWidth=9;
+    ctx.beginPath();
+    ctx.moveTo(-18,3);
+    ctx.lineTo(-32,28);
+    ctx.moveTo(18,3);
+    ctx.lineTo(32,28);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+/* ---------------- ARENA ---------------- */
+function drawArena(){
+  /*
+    중앙 원형 경기장
+  */
+  ctx.strokeStyle="rgba(120,120,135,.12)";
+  ctx.lineWidth=1;
+  for(
+    let r=90;
+    r<Math.max(W,H);
+    r+=90
+  ){
+    ctx.beginPath();
+    ctx.arc(
+      W/2,
+      H/2,
+      r,
+      0,
+      Math.PI*2
+    );
+    ctx.stroke();
+  }
+  /*
+    중심 바닥
+  */
+  const gradient=
+    ctx.createRadialGradient(
+      W/2,
+      H/2,
+      0,
+      W/2,
+      H/2,
+      280
+    );
+  gradient.addColorStop(
+    0,
+    "rgba(255,255,255,.035)"
+  );
+  gradient.addColorStop(
+    1,
+    "rgba(0,0,0,0)"
+  );
+  ctx.fillStyle=gradient;
+  ctx.fillRect(
+    0,
+    0,
+    W,
+    H
+  );
+}
+/* ---------------- EFFECT DRAW ---------------- */
+function drawEffects(){
+  /*
+    에너지 투사체
+  */
+  for(const p of projectiles){
+    ctx.save();
+    ctx.globalAlpha=
+      Math.min(1,p.life*2);
+    ctx.shadowBlur=18;
+    ctx.shadowColor="#fff";
+    ctx.fillStyle="#f1f1f4";
+    ctx.beginPath();
+    ctx.arc(
+      p.x,
+      p.y,
+      p.size,
+      0,
+      Math.PI*2
+    );
+    ctx.fill();
+    ctx.restore();
+  }
+  /*
+    링
+  */
+  for(const r of rings){
+    const progress=
+      1-r.life/.7;
+    const radius=
+      r.r+
+      (r.max-r.r)*progress;
+    ctx.save();
+    ctx.globalAlpha=
+      Math.max(0,r.life);
+    ctx.strokeStyle=
+      "rgba(235,235,240,.75)";
+    ctx.lineWidth=3;
+    ctx.beginPath();
+    ctx.arc(
+      r.x,
+      r.y,
+      radius,
+      0,
+      Math.PI*2
+    );
+    ctx.stroke();
+    ctx.restore();
+  }
+  /*
+    떠오르는 텍스트
+  */
+  for(const t of texts){
+    ctx.save();
+    ctx.globalAlpha=
+      Math.max(0,t.life);
+    ctx.fillStyle="#e9e9ed";
+    ctx.font="bold 14px Arial";
+    ctx.textAlign="center";
+    ctx.fillText(
+      t.text,
+      t.x,
+      t.y
+    );
+    ctx.restore();
+  }
+}
+/* ---------------- UPDATE EFFECTS ---------------- */
+function updateEffects(dt){
+  for(const p of particles){
+    p.x+=p.vx*dt;
+    p.y+=p.vy*dt;
+    p.vx*=.92;
+    p.vy*=.92;
+    p.life-=dt;
+  }
+  particles=
+    particles.filter(
+      p=>p.life>0
+    );
+  for(const r of rings){
+    r.life-=dt;
+  }
+  rings=
+    rings.filter(
+      r=>r.life>0
+    );
+  for(const t of texts){
+    t.y-=35*dt;
+    t.life-=dt;
+  }
+  texts=
+    texts.filter(
+      t=>t.life>0
+    );
+}
+/* ---------------- PARTICLE DRAW ---------------- */
+function drawParticles(){
+  for(const p of particles){
+    ctx.save();
+    ctx.globalAlpha=
+      Math.max(0,p.life/p.max);
+    ctx.fillStyle=
+      p.style==="burst"
+      ?"rgba(240,240,245,.9)"
+      :"rgba(180,180,190,.75)";
+    ctx.beginPath();
+    ctx.arc(
+      p.x,
+      p.y,
+      p.size,
+      0,
+      Math.PI*2
+    );
+    ctx.fill();
+    ctx.restore();
+  }
+}
+/* ---------------- GAME OVER ---------------- */
+function gameOver(){
+  playing=false;
+  $("menuText").innerHTML=
+    `
+    FINAL SCORE <b>${score}</b><br>
+    WAVE ${wave}<br><br>
+    다시 도전해라.
+    `;
+  $("start").textContent="RESTART";
+  $("overlay").classList.remove(
+    "hidden"
+  );
+}
+/* ---------------- START ---------------- */
+$("start").onclick=()=>{
+  reset();
+  playing=true;
+  $("overlay").classList.add(
+    "hidden"
+  );
+  last=performance.now();
+  requestAnimationFrame(loop);
+};
+/* ---------------- MAIN LOOP ---------------- */
+function loop(now){
+  if(!playing) return;
+  const dt=
+    Math.min(
+      (now-last)/1000,
+      .033
+    );
+  last=now;
+  ctx.clearRect(
+    0,
+    0,
+    W,
+    H
+  );
+  /*
+    웨이브 진행
+  */
+  if(
+    !bossWave &&
+    waveTimer<=0
+  ){
+    spawnTimer-=dt;
+    if(spawnTimer<=0){
+      spawnMonster();
+      /*
+        예전보다 훨씬 느리게 생성
+      */
+      spawnTimer=
+        Math.max(
+          .75,
+          1.65-wave*.035
+        );
+    }
+  }
+  if(waveTimer>0){
+    waveTimer-=dt;
+    if(waveTimer<=0){
+      nextWave();
+    }
+  }
+  /*
+    스킬 쿨타임
+  */
+  if(skillCooldown>0){
+    skillCooldown-=dt;
+    if(skillCooldown<0){
+      skillCooldown=0;
+    }
+    $("skill").classList.add("cool");
+  }else{
+    $("skill").classList.remove("cool");
+  }
+  updatePlayer(dt);
+  updateMonsters(dt);
+  updateBoss(dt);
+  updateProjectiles(dt);
+  updateEffects(dt);
+  /*
+    일반 몬스터가 너무 오래 살아있으면
+    플레이어 주변에 겹치는 것을 방지
+  */
+  if(
+    !bossWave &&
+    monsters.length===0 &&
+    waveTimer<=0
+  ){
+    /*
+      웨이브 클리어는
+      일정 시간이 지나면 진행
+    */
+    if(spawnTimer>0){
+      waveTimer=
+        Math.max(
+          waveTimer,
+          1.2
+        );
+    }
+  }
+  /*
+    실제 웨이브 진행
+    일정 점수마다 다음 웨이브
+  */
+  const targetWave=
+    Math.floor(score/120)+1;
+  if(
+    targetWave>wave &&
+    !bossWave
+  ){
+    wave=targetWave;
+    if(wave%5===0){
+      startBoss();
+    }else{
+      floatingText(
+        W/2,
+        H/2-100,
+        "WAVE "+wave
+      );
+    }
+  }
+  if(hp<=0){
+    hp=0;
+    updateHUD();
+    gameOver();
+    return;
+  }
+  /*
+    DRAW
+  */
+  drawArena();
+  drawParticles();
+  for(const m of monsters){
+    drawMonster(m);
+  }
+  drawBoss();
+  drawEffects();
+  drawPlayer();
+  updateHUD();
+  requestAnimationFrame(loop);
+}
+/* ---------------- MOBILE AIM ---------------- */
+canvas.addEventListener(
+  "pointermove",
+  e=>{
+    /*
+      조이스틱 영역은 무시
+    */
+    if(
+      e.clientX<170 &&
+      e.clientY>H-180
+    ) return;
+    mouse.x=e.clientX;
+    mouse.y=e.clientY;
+  }
+);
+/*
+  모바일 화면을 터치하면
+  해당 방향으로 에너지 공격
+*/
+canvas.addEventListener(
+  "pointerdown",
+  e=>{
+    if(e.pointerType==="touch"){
+      mouse.x=e.clientX;
+      mouse.y=e.clientY;
+      attack();
+    }
+  }
+);
+updateHUD();
+</script>
+</body>
+</html>
