@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width,initial-scale=1,
+      maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>MONSTER WORLD</title>
+<style>
+*{
+  box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+}
+html,body{
+  margin:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:#030308;
+  color:white;
+  font-family:Arial,sans-serif;
+}
+body{
+  touch-action:none;
+}
+/* =========================
+   게임 화면
+========================= */
+#game{
+  position:fixed;
+  inset:0;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 50% 45%,
+      #25253b 0%,
+      #11111d 35%,
+      #050509 78%);
+}
+/* 별 */
+#stars{
+  position:absolute;
+  inset:0;
+  opacity:.35;
+  background-image:
+    radial-gradient(circle,#fff 1px,transparent 1px),
+    radial-gradient(circle,#777 1px,transparent 1px);
+  background-size:73px 71px,127px 113px;
+}
+/* 바닥 */
+#floor{
+  position:absolute;
+  left:0;
+  bottom:0;
+  width:100%;
+  height:30%;
+  background:
+    linear-gradient(20deg,
+      transparent 47%,
+      #222231 48%,
+      #222231 49%,
+      transparent 50%),
+    linear-gradient(160deg,
+      transparent 47%,
+      #222231 48%,
+      #222231 49%,
+      transparent 50%),
+    #09090f;
+  border-top:2px solid #333342;
+}
+/* =========================
+   HUD
+========================= */
+#hud{
+  position:absolute;
+  z-index:50;
+  top:12px;
+  left:12px;
+  right:12px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+.hudBox{
+  padding:7px 11px;
+  border:1px solid #3b3b4b;
+  border-radius:10px;
+  background:#08080ed9;
+  box-shadow:0 4px 15px #0008;
+  font-size:13px;
+}
+.hudBox b{
+  font-size:16px;
+}
+.hp{
+  color:#ff6262;
+}
+.exp{
+  color:#62dfff;
+}
+#bossHud{
+  position:absolute;
+  z-index:50;
+  top:70px;
+  left:50%;
+  transform:translateX(-50%);
+  width:min(45vw,420px);
+  display:none;
+}
+#bossName{
+  text-align:center;
+  font-weight:bold;
+  margin-bottom:4px;
+}
+.bar{
+  height:9px;
+  background:#15151d;
+  border:1px solid #444;
+  border-radius:20px;
+  overflow:hidden;
+}
+#bossBar{
+  width:100%;
+  height:100%;
+  background:#d84c72;
+  transition:width .15s;
+}
+#message{
+  position:absolute;
+  z-index:45;
+  top:105px;
+  left:50%;
+  transform:translateX(-50%);
+  font-size:14px;
+  color:#ddd;
+  text-shadow:0 2px 5px #000;
+  white-space:nowrap;
+}
+/* =========================
+   플레이어
+========================= */
+#player{
+  position:absolute;
+  z-index:20;
+  width:100px;
+  height:145px;
+  transform:translate(-50%,-50%);
+}
+.skull{
+  position:absolute;
+  left:20px;
+  top:0;
+  width:62px;
+  height:62px;
+  border-radius:48% 48% 43% 43%;
+  background:#e7e7e7;
+  box-shadow:
+    inset:-8px -7px #bdbdbd,
+    0 0 12px #000;
+}
+.skull:after{
+  content:"";
+  position:absolute;
+  left:18px;
+  bottom:-7px;
+  width:27px;
+  height:18px;
+  background:#ddd;
+  border-radius:0 0 12px 12px;
+}
+.eye{
+  position:absolute;
+  top:23px;
+  width:17px;
+  height:22px;
+  background:#09090d;
+  border-radius:50%;
+}
+.eye.left{
+  left:10px;
+}
+.eye.right{
+  right:10px;
+}
+.eye.glow{
+  box-shadow:0 0 13px #51dfff;
+}
+.eye.glow:after{
+  content:"";
+  position:absolute;
+  inset:5px;
+  border-radius:50%;
+  background:#75ecff;
+}
+.nose{
+  position:absolute;
+  left:29px;
+  top:40px;
+  width:7px;
+  height:9px;
+  background:#777;
+  clip-path:polygon(50% 100%,0 0,100% 0);
+}
+.mouth{
+  position:absolute;
+  left:13px;
+  bottom:6px;
+  width:37px;
+  height:9px;
+  border-bottom:3px solid #666;
+}
+/* 몸 */
+.body{
+  position:absolute;
+  left:20px;
+  top:61px;
+  width:62px;
+  height:53px;
+  background:#20202a;
+  border:2px solid #454552;
+  border-radius:12px;
+}
+.body:after{
+  content:"";
+  position:absolute;
+  left:29px;
+  top:5px;
+  width:2px;
+  height:43px;
+  background:#555564;
+}
+/* 팔 */
+.arm{
+  position:absolute;
+  top:65px;
+  width:17px;
+  height:52px;
+  background:#20202a;
+  border:2px solid #454552;
+  border-radius:12px;
+  transform-origin:top center;
+}
+.arm.left{
+  left:4px;
+}
+.arm.right{
+  right:4px;
+}
+/* 다리 */
+.leg{
+  position:absolute;
+  top:108px;
+  width:20px;
+  height:42px;
+  background:#20202a;
+  border-radius:10px;
+  transform-origin:top center;
+}
+.leg.left{
+  left:25px;
+}
+.leg.right{
+  right:25px;
+}
+/* 걷기 */
+.walking .leg.left{
+  animation:walkL .25s infinite alternate ease-in-out;
+}
+.walking .leg.right{
+  animation:walkR .25s infinite alternate ease-in-out;
+}
+.walking .arm.left{
+  animation:armL .25s infinite alternate ease-in-out;
+}
+.walking .arm.right{
+  animation:armR .25s infinite alternate ease-in-out;
+}
+@keyframes walkL{
+  from{transform:rotate(20deg)}
+  to{transform:rotate(-20deg)}
+}
+@keyframes walkR{
+  from{transform:rotate(-20deg)}
+  to{transform:rotate(20deg)}
+}
+@keyframes armL{
+  from{transform:rotate(-20deg)}
+  to{transform:rotate(20deg)}
+}
+@keyframes armR{
+  from{transform:rotate(20deg)}
+  to{transform:rotate(-20deg)}
+}
+/* =========================
+   몬스터
+========================= */
+.monster{
+  position:absolute;
+  z-index:15;
+  width:70px;
+  height:82px;
+  transform:translate(-50%,-50%);
+  border-radius:50% 50% 35% 35%;
+  border:3px solid #a84860;
+  background:#451b29;
+  box-shadow:0 0 18px #ff315522;
+}
+.monsterEye{
+  position:absolute;
+  top:22px;
+  width:12px;
+  height:17px;
+  border-radius:50%;
+  background:#ffd76a;
+}
+.monsterEye.left{
+  left:16px;
+}
+.monsterEye.right{
+  right:16px;
+}
+.monsterMouth{
+  position:absolute;
+  left:17px;
+  bottom:14px;
+  width:32px;
+  height:13px;
+  border-bottom:4px solid #ff8294;
+  border-radius:50%;
+}
+.monster.boss{
+  width:135px;
+  height:145px;
+  border-color:#b64fda;
+  background:#29153d;
+  box-shadow:
+    0 0 35px #b64fda66,
+    inset 0 0 25px #8a35b833;
+}
+.boss .monsterEye{
+  width:20px;
+  height:28px;
+  top:38px;
+}
+.boss .monsterEye.left{
+  left:28px;
+}
+.boss .monsterEye.right{
+  right:28px;
+}
+.boss .monsterMouth{
+  left:35px;
+  bottom:25px;
+  width:65px;
+  height:22px;
+}
+/* =========================
+   에너지 탄환
+========================= */
+.energy{
+  position:absolute;
+  z-index:25;
+  width:15px;
+  height:15px;
+  border-radius:50%;
+  background:#fff;
+  box-shadow:
+    0 0 8px #fff,
+    0 0 18px #51eaff,
+    0 0 32px #51eaff;
+}
+/* =========================
+   이펙트
+========================= */
+.effect{
+  position:absolute;
+  z-index:40;
+  pointer-events:none;
+  font-size:34px;
+  animation:effect .65s forwards;
+}
+@keyframes effect{
+  0%{
+    transform:scale(.2) rotate(0);
+    opacity:0;
+  }
+  30%{
+    transform:scale(1.2) rotate(20deg);
+    opacity:1;
+  }
+  100%{
+    transform:scale(.2) rotate(80deg);
+    opacity:0;
+  }
+}
+.flash{
+  position:absolute;
+  z-index:30;
+  width:35px;
+  height:35px;
+  border-radius:50%;
+  background:#fff;
+  box-shadow:
+    0 0 20px #fff,
+    0 0 45px #58e8ff;
+  pointer-events:none;
+  animation:flash .25s forwards;
+}
+@keyframes flash{
+  from{transform:scale(.2);opacity:1}
+  to{transform:scale(2.2);opacity:0}
+}
+/* =========================
+   조이스틱
+========================= */
+#joystick{
+  position:absolute;
+  z-index:60;
+  left:25px;
+  bottom:25px;
+  width:115px;
+  height:115px;
+  border-radius:50%;
+  background:#ffffff12;
+  border:2px solid #ffffff30;
+}
+#stick{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:52px;
+  height:52px;
+  transform:translate(-50%,-50%);
+  border-radius:50%;
+  background:#ffffff25;
+  border:2px solid #ffffff55;
+}
+/* 스킬 */
+#skillButton{
+  position:absolute;
+  z-index:60;
+  right:28px;
+  bottom:30px;
+  width:82px;
+  height:82px;
+  border-radius:50%;
+  border:2px solid #62dfff;
+  background:#0b1820dd;
+  color:#8ceeff;
+  font-weight:bold;
+  box-shadow:0 0 20px #32dfff33;
+}
+/* =========================
+   시작/게임오버
+========================= */
+#overlay{
+  position:absolute;
+  z-index:100;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#020207d9;
+}
+.panel{
+  width:min(90vw,520px);
+  padding:30px;
+  text-align:center;
+  border-radius:20px;
+  border:1px solid #484858;
+  background:#0d0d16f5;
+  box-shadow:0 20px 80px #000;
+}
+.panel h1{
+  margin:0 0 10px;
+  font-size:42px;
+  letter-spacing:3px;
+}
+.panel p{
+  color:#bbb;
+  line-height:1.7;
+}
+.startButton{
+  margin-top:10px;
+  border:1px solid #5a5a6c;
+  border-radius:12px;
+  padding:13px 25px;
+  background:#171722;
+  color:white;
+  font-size:16px;
+  font-weight:bold;
+}
+/* 세로 화면 안내 */
+#rotate{
+  display:none;
+  position:absolute;
+  z-index:200;
+  inset:0;
+  background:#050509;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:30px;
+}
+@media (orientation:portrait) and (max-width:700px){
+  #rotate{
+    display:flex;
+  }
+}
+/* 작은 화면 */
+@media(max-height:500px){
+  #hud{
+    top:7px;
+  }
+  .hudBox{
+    padding:5px 8px;
+    font-size:11px;
+  }
+  .hudBox b{
+    font-size:13px;
+  }
+  #message{
+    top:65px;
+  }
+}
+</style>
+</head>
+<body>
+<div id="game">
+  <div id="stars"></div>
+  <div id="floor"></div>
+  <!-- HUD -->
+  <div id="hud">
+    <div class="hudBox">
+      💀 HP <b class="hp" id="hp">100</b>
+    </div>
+    <div class="hudBox">
+      LV <b id="level">1</b>
+    </div>
+    <div class="hudBox">
+      EXP <b class="exp" id="exp">0</b>/100
+    </div>
+    <div class="hudBox">
+      SCORE <b id="score">0</b>
+    </div>
+    <div class="hudBox">
+      WAVE <b id="wave">1</b>
+    </div>
+  </div>
+  <!-- 보스 HP -->
+  <div id="bossHud">
+    <div id="bossName">VOID KING</div>
+    <div class="bar">
+      <div id="bossBar"></div>
+    </div>
+  </div>
+  <div id="message">
+    MONSTER WORLD
+  </div>
+  <!-- 플레이어 -->
+  <div id="player" class="walking">
+    <div class="skull">
+      <div class="eye left glow"></div>
+      <div class="eye right"></div>
+      <div class="nose"></div>
+      <div class="mouth"></div>
+    </div>
+    <div class="body"></div>
+    <div class="arm left"></div>
+    <div class="arm right"></div>
+    <div class="leg left"></div>
+    <div class="leg right"></div>
+  </div>
+  <!-- 조이스틱 -->
+  <div id="joystick">
+    <div id="stick"></div>
+  </div>
+  <!-- 스킬 -->
+  <button id="skillButton">VOID<br>SKILL</button>
+  <!-- 시작 화면 -->
+  <div id="overlay">
+    <div class="panel">
+      <h1>MONSTER WORLD</h1>
+      <p>
+        어둠 속에서 몬스터들이 나타난다.<br>
+        해골을 움직여 몬스터를 쓰러뜨리고<br>
+        더 높은 웨이브에 도전하자.
+      </p>
+      <button class="startButton" id="startButton">
+        GAME START
+      </button>
+    </div>
+  </div>
+  <!-- 세로 화면 -->
+  <div id="rotate">
+    <div>
+      <div style="font-size:55px">📱↔️</div>
+      <h2>휴대폰을 가로로 돌려주세요</h2>
+      <p>MONSTER WORLD는 가로 화면에 최적화되어 있습니다.</p>
+    </div>
+  </div>
+</div>
+<script>
+/* =====================================================
+   MONSTER WORLD
+===================================================== */
+const game = document.getElementById("game");
+const player = document.getElementById("player");
+const joystick = document.getElementById("joystick");
+const stick = document.getElementById("stick");
+const hpText = document.getElementById("hp");
+const levelText = document.getElementById("level");
+const expText = document.getElementById("exp");
+const scoreText = document.getElementById("score");
+const waveText = document.getElementById("wave");
+const bossHud = document.getElementById("bossHud");
+const bossBar = document.getElementById("bossBar");
+let playing = false;
+let playerX = 50;
+let playerY = 62;
+let hp = 100;
+let level = 1;
+let exp = 0;
+let score = 0;
+let wave = 1;
+let monsters = [];
+let projectiles = [];
+let spawnTimer = 0;
+let lastTime = 0;
+let joystickActive = false;
+let joyX = 0;
+let joyY = 0;
+let skillCooldown = false;
+/* =====================================================
+   기본 함수
+===================================================== */
+function clamp(v,min,max){
+  return Math.max(min,Math.min(max,v));
+}
+function updatePlayer(){
+  player.style.left = playerX + "%";
+  player.style.top = playerY + "%";
+}
+function updateHUD(){
+  hpText.textContent = Math.max(0,Math.ceil(hp));
+  levelText.textContent = level;
+  expText.textContent = exp;
+  scoreText.textContent = score;
+  waveText.textContent = wave;
+}
+function message(text){
+  document.getElementById("message").textContent = text;
+}
+/* =====================================================
+   레벨업
+===================================================== */
+function gainExp(amount){
+  exp += amount;
+  while(exp >= 100){
+    exp -= 100;
+    level++;
+    hp = Math.min(100,hp+25);
+    message("LEVEL UP!  💀  LV." + level);
+    createEffect(
+      playerX,
+      playerY,
+      "✨"
+    );
+  }
+  updateHUD();
+}
+/* =====================================================
+   몬스터 생성
+===================================================== */
+function spawnMonster(){
+  const side = Math.floor(Math.random()*4);
+  let x;
+  let y;
+  if(side === 0){
+    x = -5;
+    y = 10 + Math.random()*80;
+  }
+  if(side === 1){
+    x = 105;
+    y = 10 + Math.random()*80;
+  }
+  if(side === 2){
+    x = 10 + Math.random()*80;
+    y = -5;
+  }
+  if(side === 3){
+    x = 10 + Math.random()*80;
+    y = 105;
+  }
+  const bossWave = wave % 5 === 0 && !monsters.some(m=>m.boss);
+  let boss = bossWave;
+  const monster = {
+    x,
+    y,
+    hp:boss ? 25 + wave*3 : 2 + Math.floor(wave/4),
+    maxHp:boss ? 25 + wave*3 : 2 + Math.floor(wave/4),
+    speed:boss ? .75 : .9 + wave*.025,
+    size:boss ? 1.8 : 1,
+    boss
+  };
+  monsters.push(monster);
+  drawMonster(monster);
+  if(boss){
+    bossHud.style.display="block";
+    message("⚠ VOID KING 출현!");
+  }
+}
+/* =====================================================
+   몬스터 DOM
+===================================================== */
+function drawMonster(m){
+  const el = document.createElement("div");
+  el.className = "monster";
+  if(m.boss){
+    el.classList.add("boss");
+  }
+  el.innerHTML = `
+    <div class="monsterEye left"></div>
+    <div class="monsterEye right"></div>
+    <div class="monsterMouth"></div>
+  `;
+  game.appendChild(el);
+  m.el = el;
+  updateMonster(m);
+}
+function updateMonster(m){
+  m.el.style.left = m.x + "%";
+  m.el.style.top = m.y + "%";
+}
+function removeMonster(m){
+  if(m.el){
+    m.el.remove();
+  }
+}
+/* =====================================================
+   에너지 공격
+===================================================== */
+function energyAttack(){
+  if(!playing) return;
+  const projectile = {
+    x:playerX,
+    y:playerY,
+    vx:1.8,
+    vy:0,
+    life:100,
+    el:null
+  };
+  const el = document.createElement("div");
+  el.className = "energy";
+  game.appendChild(el);
+  projectile.el = el;
+  el.style.left = projectile.x + "%";
+  el.style.top = projectile.y + "%";
+  projectiles.push(projectile);
+}
+/* =====================================================
+   공격 방향
+===================================================== */
+function attack(){
+  if(!playing) return;
+  energyAttack();
+}
+/* =====================================================
+   필살 스킬
+===================================================== */
+function specialSkill(){
+  if(!playing || skillCooldown) return;
+  skillCooldown = true;
+  message("VOID BREAK!");
+  for(let i=0;i<10;i++){
+    setTimeout(()=>{
+      createEffect(
+        20 + Math.random()*60,
+        20 + Math.random()*60,
+        "💥"
+      );
+    },i*50);
+  }
+  for(const m of monsters){
+    const dx=m.x-playerX;
+    const dy=m.y-playerY;
+    const distance=Math.sqrt(dx*dx+dy*dy);
+    if(distance<35){
+      damageMonster(m,5);
+    }
+  }
+  setTimeout(()=>{
+    skillCooldown=false;
+    message("SKILL READY");
+  },2500);
+}
+/* =====================================================
+   몬스터 데미지
+===================================================== */
+function damageMonster(m,damage){
+  m.hp -= damage;
+  createFlash(m.x,m.y);
+  if(m.hp <= 0){
+    score += m.boss ? 300 : 10;
+    gainExp(m.boss ? 100 : 20);
+    createEffect(
+      m.x,
+      m.y,
+      m.boss ? "👑" : "💀"
+    );
+    if(m.boss){
+      message("VOID KING DEFEATED!");
+      bossHud.style.display="none";
+      wave++;
+    }
+    removeMonster(m);
+    monsters = monsters.filter(x=>x!==m);
+  }
+}
+/* =====================================================
+   플레이어 이동
+===================================================== */
+function movePlayer(){
+  playerX += joyX * .22;
+  playerY += joyY * .22;
+  playerX = clamp(playerX,5,95);
+  playerY = clamp(playerY,20,85);
+  updatePlayer();
+}
+/* =====================================================
+   조이스틱
+===================================================== */
+function setJoystick(clientX,clientY){
+  const rect=joystick.getBoundingClientRect();
+  const centerX=rect.left+rect.width/2;
+  const centerY=rect.top+rect.height/2;
+  let dx=clientX-centerX;
+  let dy=clientY-centerY;
+  const max=42;
+  const distance=Math.sqrt(dx*dx+dy*dy);
+  if(distance>max){
+    dx=dx/distance*max;
+    dy=dy/distance*max;
+  }
+  joyX=dx/max;
+  joyY=dy/max;
+  stick.style.left=`calc(50% + ${dx}px)`;
+  stick.style.top=`calc(50% + ${dy}px)`;
+}
+function resetJoystick(){
+  joystickActive=false;
+  joyX=0;
+  joyY=0;
+  stick.style.left="50%";
+  stick.style.top="50%";
+}
+joystick.addEventListener("pointerdown",e=>{
+  joystickActive=true;
+  joystick.setPointerCapture(e.pointerId);
+  setJoystick(e.clientX,e.clientY);
+});
+joystick.addEventListener("pointermove",e=>{
+  if(joystickActive){
+    setJoystick(e.clientX,e.clientY);
+  }
+});
+joystick.addEventListener("pointerup",resetJoystick);
+joystick.addEventListener("pointercancel",resetJoystick);
+/* =====================================================
+   키보드
+===================================================== */
+const keys={};
+window.addEventListener("keydown",e=>{
+  keys[e.key.toLowerCase()]=true;
+});
+window.addEventListener("keyup",e=>{
+  keys[e.key.toLowerCase()]=false;
+});
+function keyboardMove(){
+  let x=0;
+  let y=0;
+  if(keys["a"] || keys["arrowleft"]) x--;
+  if(keys["d"] || keys["arrowright"]) x++;
+  if(keys["w"] || keys["arrowup"]) y--;
+  if(keys["s"] || keys["arrowdown"]) y++;
+  if(x!==0 || y!==0){
+    const len=Math.sqrt(x*x+y*y);
+    joyX=x/len;
+    joyY=y/len;
+    movePlayer();
+  }
+}
+/* =====================================================
+   몬스터 AI
+===================================================== */
+function updateMonsters(){
+  for(const m of monsters){
+    const dx=playerX-m.x;
+    const dy=playerY-m.y;
+    const distance=Math.sqrt(dx*dx+dy*dy)||1;
+    m.x += dx/distance*m.speed*.08;
+    m.y += dy/distance*m.speed*.08;
+    updateMonster(m);
+    if(distance < (m.boss?12:7)){
+      hp -= m.boss ? .45 : .2;
+      m.x -= dx/distance*.3;
+      m.y -= dy/distance*.3;
+    }
+    if(m.boss){
+      bossBar.style.width =
+        Math.max(0,m.hp/m.maxHp*100)+"%";
+    }
+  }
+}
+/* =====================================================
+   투사체
+===================================================== */
+function updateProjectiles(){
+  for(const p of projectiles){
+    p.x += p.vx;
+    p.life--;
+    p.el.style.left=p.x+"%";
+    p.el.style.top=p.y+"%";
+    for(const m of [...monsters]){
+      const dx=p.x-m.x;
+      const dy=p.y-m.y;
+      const distance=Math.sqrt(dx*dx+dy*dy);
+      if(distance < (m.boss?10:7)){
+        damageMonster(m,1);
+        p.life=0;
+        break;
+      }
+    }
+  }
+  projectiles =
+    projectiles.filter(p=>{
+      if(p.life<=0){
+        p.el.remove();
+        return false;
+      }
+      return true;
+    });
+}
+/* =====================================================
+   이펙트
+===================================================== */
+function createEffect(x,y,text){
+  const el=document.createElement("div");
+  el.className="effect";
+  el.textContent=text;
+  el.style.left=x+"%";
+  el.style.top=y+"%";
+  game.appendChild(el);
+  setTimeout(()=>el.remove(),650);
+}
+function createFlash(x,y){
+  const el=document.createElement("div");
+  el.className="flash";
+  el.style.left=x+"%";
+  el.style.top=y+"%";
+  game.appendChild(el);
+  setTimeout(()=>el.remove(),250);
+}
+/* =====================================================
+   게임 시작
+===================================================== */
+function startGame(){
+  hp=100;
+  level=1;
+  exp=0;
+  score=0;
+  wave=1;
+  playerX=50;
+  playerY=62;
+  monsters.forEach(removeMonster);
+  projectiles.forEach(p=>p.el.remove());
+  monsters=[];
+  projectiles=[];
+  updatePlayer();
+  updateHUD();
+  bossHud.style.display="none";
+  document.getElementById("overlay").style.display="none";
+  playing=true;
+  lastTime=performance.now();
+  requestAnimationFrame(gameLoop);
+}
+/* =====================================================
+   게임오버
+===================================================== */
+function gameOver(){
+  playing=false;
+  monsters.forEach(removeMonster);
+  monsters=[];
+  projectiles.forEach(p=>p.el.remove());
+  projectiles=[];
+  bossHud.style.display="none";
+  const overlay=document.getElementById("overlay");
+  overlay.style.display="flex";
+  overlay.querySelector("h1").textContent="GAME OVER";
+  overlay.querySelector("p").innerHTML=
+    `최종 점수 <b>${score}</b><br>
+     도달 웨이브 <b>${wave}</b>`;
+  document.getElementById("startButton").textContent=
+    "RESTART";
+}
+/* =====================================================
+   게임 루프
+===================================================== */
+function gameLoop(time){
+  if(!playing) return;
+  const dt=Math.min((time-lastTime)/16.67,2);
+  lastTime=time;
+  keyboardMove();
+  if(!joystickActive){
+    joyX=0;
+    joyY=0;
+  }
+  movePlayer();
+  updateMonsters();
+  updateProjectiles();
+  spawnTimer -= dt;
+  if(spawnTimer<=0){
+    spawnMonster();
+    spawnTimer =
+      Math.max(
+        .35,
+        1.5-wave*.06
+      );
+  }
+  /* 일정 점수마다 웨이브 */
+  const newWave =
+    Math.floor(score/100)+1;
+  if(newWave>wave){
+    wave=newWave;
+    message("WAVE "+wave);
+  }
+  updateHUD();
+  if(hp<=0){
+    gameOver();
+    return;
+  }
+  requestAnimationFrame(gameLoop);
+}
+/* =====================================================
+   버튼
+===================================================== */
+document
+  .getElementById("startButton")
+  .addEventListener("click",startGame);
+document
+  .getElementById("skillButton")
+  .addEventListener("pointerdown",specialSkill);
+/* 화면 터치 오른쪽 영역 공격 */
+game.addEventListener("pointerdown",e=>{
+  if(
+    e.target===game ||
+    e.target.id==="floor" ||
+    e.target.id==="stars"
+  ){
+    attack();
+  }
+});
+/* 시작 */
+updatePlayer();
+updateHUD();
+</script>
+</body>
+</html>
